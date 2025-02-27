@@ -1,100 +1,92 @@
 "use client";
-
-import Image from "next/image";
+import { useEffect } from "react";
+import { useActiveAccount, useWalletBalance } from "thirdweb/react";
+import Header from "../../components/Header";
+import Hero from "../../components/Hero";
+import toast, { Toaster } from "react-hot-toast";
 import { ConnectButton } from "thirdweb/react";
-import thirdwebIcon from "@public/thirdweb.svg";
 import { client } from "./client";
+import { createClient } from "@sanity/client";
+import { ethereum } from "thirdweb/chains";
+
+const style = {
+  wrapper: `border-2 border-solid border-red-300`,
+  walletConnectWrapper: `flex flex-col justify-center items-center h-screen w-screen bg-[#3b3d42] `,
+  button: `border border-[#282b2f] bg-[#2081e2] p-[0.8rem] text-xl font-semibold rounded-lg cursor-pointer text-black`,
+  details: `text-lg text-center text=[#282b2f] font-semibold mt-4`,
+};
+
+const sanityClient = createClient({
+  projectId: "62vfb30n",
+  dataset: "production",
+  useCdn: false,
+  apiVersion: "2025-02-25",
+  token: "yourSanityToken", // Optional: Use a token for write access
+});
 
 export default function Home() {
-  return (
-    <main className="p-4 pb-10 min-h-[100vh] flex items-center justify-center container max-w-screen-lg mx-auto">
-      <div className="py-20">
-        <Header />
+  const account = useActiveAccount();
+  const { data: balance, isLoading } = useWalletBalance({
+    client: sanityClient, // Ensure correct client usage
+    chain: ethereum,
+    address: account?.address,
+  });
 
-        <div className="flex justify-center mb-20">
+  const welcomeUser = (userName, toastHandler = toast) => {
+    toastHandler.success(
+      `Welcome back${userName !== "Unnamed" ? ` ${userName}` : ""}!`,
+      {
+        style: {
+          background: "#04111d",
+          color: "#fff",
+        },
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (!account?.address) return;
+    (async () => {
+      const userDoc = {
+        _type: "users",
+        _id: account.address,
+        userName: account.address,
+        walletAddress: account.address,
+      };
+
+      try {
+        const result = await sanityClient.createIfNotExists(userDoc);
+        welcomeUser(result.userName);
+      } catch (error) {
+        console.error("Sanity error:", error);
+      }
+    })();
+  }, [account?.address]);
+
+  return (
+    <div className={style.wrapper}>
+      <Toaster position="top-center" reverseOrder={false} />
+
+      {account?.address ? (
+        <>
+          <Header />
+          <Hero />
+        </>
+      ) : (
+        <div className={style.walletConnectWrapper}>
           <ConnectButton
             client={client}
             appMetadata={{
-              name: "Example App",
-              url: "https://example.com",
+              name: "OpenSea App",
+              url: "http://localhost:3004",
             }}
           />
+          <div className={style.details}>
+            You need Chrome to be
+            <br /> able to run this app.
+          </div>
         </div>
-
-        <ThirdwebResources />
-      </div>
-    </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex flex-col items-center mb-20 md:mb-20">
-      <Image
-        src={thirdwebIcon}
-        alt=""
-        className="size-[150px] md:size-[150px]"
-        style={{
-          filter: "drop-shadow(0px 0px 24px #a726a9a8)",
-        }}
-      />
-
-      <h1 className="text-2xl md:text-6xl font-semibold md:font-bold tracking-tighter mb-6 text-zinc-100">
-        thirdweb SDK
-        <span className="text-zinc-300 inline-block mx-1"> + </span>
-        <span className="inline-block -skew-x-6 text-blue-500"> Next.js </span>
-      </h1>
-
-      <p className="text-zinc-300 text-base">
-        Read the{" "}
-        <code className="bg-zinc-800 text-zinc-300 px-2 rounded py-1 text-sm mx-1">
-          README.md
-        </code>{" "}
-        file to get started.
-      </p>
-    </header>
-  );
-}
-
-function ThirdwebResources() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-3 justify-center">
-      <ArticleCard
-        title="thirdweb SDK Docs"
-        href="https://portal.thirdweb.com/typescript/v5"
-        description="thirdweb TypeScript SDK documentation"
-      />
-
-      <ArticleCard
-        title="Components and Hooks"
-        href="https://portal.thirdweb.com/typescript/v5/react"
-        description="Learn about the thirdweb React components and hooks in thirdweb SDK"
-      />
-
-      <ArticleCard
-        title="thirdweb Dashboard"
-        href="https://thirdweb.com/dashboard"
-        description="Deploy, configure, and manage your smart contracts from the dashboard."
-      />
+      )}
     </div>
-  );
-}
-
-function ArticleCard(props: {
-  title: string;
-  href: string;
-  description: string;
-}) {
-  return (
-    <a
-      href={props.href + "?utm_source=next-template"}
-      target="_blank"
-      className="flex flex-col border border-zinc-800 p-4 rounded-lg hover:bg-zinc-900 transition-colors hover:border-zinc-700"
-    >
-      <article>
-        <h2 className="text-lg font-semibold mb-2">{props.title}</h2>
-        <p className="text-sm text-zinc-400">{props.description}</p>
-      </article>
-    </a>
   );
 }
