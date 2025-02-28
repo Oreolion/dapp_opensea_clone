@@ -7,10 +7,6 @@ import { CgProfile } from 'react-icons/cg'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 
 const style = {
-  wrapper: "",
-  logoContainer: "",
-  logoText: ``,
-  searchBar: ` `,
   searchIcon: `text-[#8a939b] mx-3 font-bold text-lg`,
   searchInput: `h-[2.6rem] w-full border-0 bg-transparent outline-0 ring-0 px-2 pl-0 text-[#e6e8eb] placeholder:text-[#8a939b]`,
   headerItems: ` flex items-center gap-4 justify-end`,
