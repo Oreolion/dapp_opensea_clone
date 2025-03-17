@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { useRouter } from 'next/router'
-import Link from 'next/link'
-import { useWeb3 } from '@3rdweb/hooks'
-import { client } from '../../lib/sanityClient'
-import { ThirdwebSDK } from '@3rdweb/sdk'
-import Header from '../../components/Header'
-import { CgWebsite } from 'react-icons/cg'
-import { AiOutlineInstagram, AiOutlineTwitter } from 'react-icons/ai'
-import { HiDotsVertical } from 'react-icons/hi'
-import NFTCard from '../../components/NFTCard'
+"use client";
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useReadContract } from "thirdweb/react";
+import { client } from "../../client.ts";
+import Header from "../../../../components/Header.js";
+import { CgWebsite } from "react-icons/cg";
+import { AiOutlineInstagram, AiOutlineTwitter } from "react-icons/ai";
+import { HiDotsVertical } from "react-icons/hi";
+import NFTCard from "../../../../components/NFTCard.js";
+import { defineChain, getContract } from "thirdweb";
+import { isERC721 } from "thirdweb/extensions/erc721";
 
 const style = {
   bannerImageContainer: `h-[20vh] w-screen overflow-hidden flex justify-center items-center`,
@@ -30,96 +31,56 @@ const style = {
   ethLogo: `h-6 mr-2`,
   statName: `text-lg w-full text-center mt-1`,
   description: `text-[#8a939b] text-xl w-max-1/4 flex-wrap mt-4`,
-}
+};
 
 const Collection = () => {
-  const router = useRouter()
-  const { provider } = useWeb3()
-  const { collectionId } = router.query
-  const [collection, setCollection] = useState({})
-  const [nfts, setNfts] = useState([])
-  const [listings, setListings] = useState([])
+  const params = useParams();
+  const collectionId = params?.collectionId;
+  const [collection, setCollection] = useState({});
+  console.log(params);
 
-  //
+  // Fetch NFT contract
+  const contract = getContract({
+    client,
+    address: "0x1D97aafFCC43316a03ee7dB0d2eb4D68BC8dbED4",
+    chain: defineChain(11155111),
+  });
 
-  const nftModule = useMemo(() => {
-    if (!provider) return
+  console.log(contract);
+  console.log(collectionId);
 
-    const sdk = new ThirdwebSDK(
-      provider.getSigner(),
-      'https://rinkeby.infura.io/v3/a464b9152d8c466c8a94a514fce8e837'
-    )
-    return sdk.getNFTModule(collectionId)
-  }, [provider])
-
-  // get all NFTs in the collection
+  // Fetch collection data from Sanity
   useEffect(() => {
-    if (!nftModule) return
-    ;(async () => {
-      const nfts = await nftModule.getAll()
+    if (!collectionId) return;
 
-      setNfts(nfts)
-    })()
-  }, [nftModule])
+    const fetchCollectionData = async () => {
+      const query = `*[_type == "marketItems" && contractAddress == "${collectionId}"] {
+        "imageUrl": profileImage.asset->url,
+        "bannerImageUrl": bannerImage.asset->url,
+        volumeTraded,
+        createdBy,
+        contractAddress,
+        "creator": createdBy->userName,
+        title,
+        floorPrice,
+        "allOwners": owners[]->,
+        description
+      }`;
 
-  const marketPlaceModule = useMemo(() => {
-    if (!provider) return
+      // Uncomment to fetch data from Sanity
+      // const collectionData = await client.fetch(query);
+      // setCollection(collectionData[0] || {});
+    };
 
-    const sdk = new ThirdwebSDK(
-      provider.getSigner(),
-      'https://rinkeby.infura.io/v3/a464b9152d8c466c8a94a514fce8e837'
-    )
-    return sdk.getMarketplaceModule(
-      '0x93A771F7ce845C33381f677489cF21a5964EDD0b'
-    )
-  }, [provider])
-
-  // get all listings in the collection
-  useEffect(() => {
-    if (!marketPlaceModule) return
-    ;(async () => {
-      setListings(await marketPlaceModule.getAllListings())
-    })()
-  }, [marketPlaceModule])
-
-  const fetchCollectionData = async (sanityClient = client) => {
-    const query = `*[_type == "marketItems" && contractAddress == "${collectionId}" ] {
-      "imageUrl": profileImage.asset->url,
-      "bannerImageUrl": bannerImage.asset->url,
-      volumeTraded,
-      createdBy,
-      contractAddress,
-      "creator": createdBy->userName,
-      title, floorPrice,
-      "allOwners": owners[]->,
-      description
-    }`
-
-    const collectionData = await sanityClient.fetch(query)
-
-    console.log(collectionData, '🔥')
-
-    // the query returns 1 object inside of an array
-    await setCollection(collectionData[0])
-  }
-
-  useEffect(() => {
-    fetchCollectionData()
-  }, [collectionId])
-
-  console.log(router.query)
-  console.log(router.query.collectionId)
+    fetchCollectionData();
+  }, [collectionId]);
   return (
     <div className="overflow-hidden">
       <Header />
       <div className={style.bannerImageContainer}>
         <img
           className={style.bannerImage}
-          src={
-            collection?.bannerImageUrl
-              ? collection.bannerImageUrl
-              : 'https://via.placeholder.com/200'
-          }
+          src={collection?.bannerImageUrl || "https://via.placeholder.com/200"}
           alt="banner"
         />
       </div>
@@ -127,12 +88,8 @@ const Collection = () => {
         <div className={style.midRow}>
           <img
             className={style.profileImg}
-            src={
-              collection?.imageUrl
-                ? collection.imageUrl
-                : 'https://via.placeholder.com/200'
-            }
-            alt="profile image"
+            src={collection?.imageUrl || "https://via.placeholder.com/200"}
+            alt="profile"
           />
         </div>
         <div className={style.endRow}>
@@ -163,19 +120,19 @@ const Collection = () => {
         </div>
         <div className={style.midRow}>
           <div className={style.createdBy}>
-            Created by{' '}
+            Created by{" "}
             <span className="text-[#2081e2]">{collection?.creator}</span>
           </div>
         </div>
         <div className={style.midRow}>
           <div className={style.statsContainer}>
             <div className={style.collectionStat}>
-              <div className={style.statValue}>{nfts.length}</div>
+              {/* <div className={style.statValue}>{nfts?.length || 0}</div> */}
               <div className={style.statName}>items</div>
             </div>
             <div className={style.collectionStat}>
               <div className={style.statValue}>
-                {collection?.allOwners ? collection.allOwners.length : ''}
+                {collection?.allOwners?.length || 0}
               </div>
               <div className={style.statName}>owners</div>
             </div>
@@ -186,7 +143,7 @@ const Collection = () => {
                   alt="eth"
                   className={style.ethLogo}
                 />
-                {collection?.floorPrice}
+                {collection?.floorPrice || 0}
               </div>
               <div className={style.statName}>floor price</div>
             </div>
@@ -197,7 +154,7 @@ const Collection = () => {
                   alt="eth"
                   className={style.ethLogo}
                 />
-                {collection?.volumeTraded}.5K
+                {collection?.volumeTraded || 0}K
               </div>
               <div className={style.statName}>volume traded</div>
             </div>
@@ -207,18 +164,14 @@ const Collection = () => {
           <div className={style.description}>{collection?.description}</div>
         </div>
       </div>
-      <div className="flex flex-wrap ">
-        {nfts.map((nftItem, id) => (
-          <NFTCard
-            key={id}
-            nftItem={nftItem}
-            title={collection?.title}
-            listings={listings}
-          />
-        ))}
+      <div className="flex flex-wrap">
+        {/* Uncomment and update with actual NFT data */}
+        {/* {nfts?.map((nft, id) => (
+          <NFTCard key={id} nftItem={nft} title={collection?.title} />
+        ))} */}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Collection
+export default Collection;

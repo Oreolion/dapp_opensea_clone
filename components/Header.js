@@ -19,7 +19,7 @@ const Header = () => {
     <div className="bg-[#04111d] px-[1.2rem] py-[1rem] flex justify-between w-screen">
       <Link href="/">
         <div className="flex items-center gap-2 cursor-pointer">
-          <Image src={openseaLogo} height={40} width={40} />
+          <Image src={openseaLogo} height={40} width={40} alt='img' />
           <div className=" ml-[0.8rem] text-white font-semibold text-2xl">Opensea</div>
         </div>
       </Link>
@@ -33,7 +33,7 @@ const Header = () => {
         />
       </div>
       <div className={style.headerItems}>
-        <Link href="/collections/0x66a576A977b7Bccf510630E0aA5e450EC11361Fa">
+        <Link href="/collections/0x1D97aafFCC43316a03ee7dB0d2eb4D68BC8dbED4">
           <div className={style.headerItem}> Collections </div>
         </Link>
         <div className={style.headerItem}> Stats </div>

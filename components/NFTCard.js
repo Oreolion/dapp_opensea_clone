@@ -1,3 +1,4 @@
+'use client'
 import { useEffect, useState } from 'react'
 import { BiHeart } from 'react-icons/bi'
 import Router from 'next/router'

@@ -16,18 +16,18 @@ const style = {
   details: `text-lg text-center text=[#282b2f] font-semibold mt-4`,
 };
 
-const sanityClient = createClient({
+export const sanityClient = createClient({
   projectId: "62vfb30n",
   dataset: "production",
   useCdn: false,
   apiVersion: "2025-02-25",
-  token: "yourSanityToken", // Optional: Use a token for write access
+  token: "skgk1Zmr2MQkCdnSmbwu85rv3mYztMPL8nP0XzgNIBbKl0TQDf0OiOLKqmgVCh0QlAi2DI9wsou7hLlGETOyitMipfXxgXIXyt48cgJgvdq2YgGPV1ARqgB9ckURJWUSX6kJeN8znS0kzGSGBkTxyvuMa9O7JWajiEl6VF0BvbA2dxa0ACcn", // Optional: Use a token for write access
 });
 
 export default function Home() {
   const account = useActiveAccount();
   const { data: balance, isLoading } = useWalletBalance({
-    client: sanityClient, // Ensure correct client usage
+    client: client, 
     chain: ethereum,
     address: account?.address,
   });
