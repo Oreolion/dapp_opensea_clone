@@ -31,8 +31,8 @@ const Hero = () => {
           </div>
           <div className={style.cardContainer}>
             <Image
-              height={200}
-              width={450}
+              height={180}
+              width={430}
               className="rounded-t-lg object-cover"
               src="https://lh3.googleusercontent.com/ujepnqpnL0nDQIHsWxlCXzyw4pf01yjz1Jmb4kAQHumJAPrSEj0-e3ABMZlZ1HEpJoqwOcY_kgnuJGzfXbd2Tijri66GXUtfN2MXQA=s550"
               alt=""

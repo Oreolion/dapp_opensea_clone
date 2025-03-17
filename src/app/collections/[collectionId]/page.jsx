@@ -9,7 +9,14 @@ import { AiOutlineInstagram, AiOutlineTwitter } from "react-icons/ai";
 import { HiDotsVertical } from "react-icons/hi";
 import NFTCard from "../../../../components/NFTCard.js";
 import { defineChain, getContract } from "thirdweb";
-import { isERC721 } from "thirdweb/extensions/erc721";
+import { getNFTs, isERC721, ownedNFTs } from "thirdweb/extensions/erc721";
+import sanityClient from "../../../../lib/sanityClient.js";
+import Image from "next/image.js";
+
+// Log imports to verify
+console.log("Imported isERC721:", isERC721);
+console.log("Imported ownedNFTs:", ownedNFTs);
+console.log("Imported getNFTs:", getNFTs);
 
 const style = {
   bannerImageContainer: `h-[20vh] w-screen overflow-hidden flex justify-center items-center`,
@@ -37,17 +44,27 @@ const Collection = () => {
   const params = useParams();
   const collectionId = params?.collectionId;
   const [collection, setCollection] = useState({});
-  console.log(params);
+  const [nfts, setNfts] = useState([]);
 
-  // Fetch NFT contract
   const contract = getContract({
     client,
     address: "0x1D97aafFCC43316a03ee7dB0d2eb4D68BC8dbED4",
     chain: defineChain(11155111),
   });
 
-  console.log(contract);
-  console.log(collectionId);
+  // Fetch ERC-721 status with safety check
+  const { data: isERC721Data, isLoading: isLoadingERC721 } = isERC721
+    ? useReadContract(isERC721, { contract })
+    : { data: null, isLoading: false };
+
+  // Fetch owned NFTs with safety check
+  const { data: ownedNfts, isLoading: isLoadingOwnedNfts } = ownedNFTs
+    ? useReadContract(ownedNFTs, {
+        contract,
+        owner: collectionId,
+        queryOptions: { enabled: !!collectionId && isERC721Data === true },
+      })
+    : { data: null, isLoading: false };
 
   // Fetch collection data from Sanity
   useEffect(() => {
@@ -66,30 +83,47 @@ const Collection = () => {
         "allOwners": owners[]->,
         description
       }`;
+      const collectionData = await sanityClient.fetch(query);
+      console.log(collectionData);
 
-      // Uncomment to fetch data from Sanity
-      // const collectionData = await client.fetch(query);
-      // setCollection(collectionData[0] || {});
+      setCollection(collectionData[0] || {});
     };
 
     fetchCollectionData();
   }, [collectionId]);
+
+  // Update NFTs state
+  useEffect(() => {
+    if (ownedNfts) {
+      setNfts(ownedNfts);
+    }
+  }, [ownedNfts]);
+
+  console.log("Params:", params);
+  console.log("Contract:", contract);
+  console.log("Is ERC-721:", isERC721Data);
+  console.log("Owned NFTs:", ownedNfts);
+
   return (
     <div className="overflow-hidden">
       <Header />
       <div className={style.bannerImageContainer}>
-        <img
+        <Image
           className={style.bannerImage}
           src={collection?.bannerImageUrl || "https://via.placeholder.com/200"}
           alt="banner"
+          height={40}
+          width={40}
         />
       </div>
       <div className={style.infoContainer}>
         <div className={style.midRow}>
-          <img
+          <Image
             className={style.profileImg}
             src={collection?.imageUrl || "https://via.placeholder.com/200"}
             alt="profile"
+            height={40}
+            width={40}
           />
         </div>
         <div className={style.endRow}>
@@ -127,7 +161,7 @@ const Collection = () => {
         <div className={style.midRow}>
           <div className={style.statsContainer}>
             <div className={style.collectionStat}>
-              {/* <div className={style.statValue}>{nfts?.length || 0}</div> */}
+              <div className={style.statValue}>{nfts?.length || 0}</div>
               <div className={style.statName}>items</div>
             </div>
             <div className={style.collectionStat}>
@@ -138,10 +172,12 @@ const Collection = () => {
             </div>
             <div className={style.collectionStat}>
               <div className={style.statValue}>
-                <img
+                <Image
                   src="https://storage.opensea.io/files/6f8e2979d428180222796ff4a33ab929.svg"
                   alt="eth"
                   className={style.ethLogo}
+                  height={40}
+                  width={40}
                 />
                 {collection?.floorPrice || 0}
               </div>
@@ -149,10 +185,12 @@ const Collection = () => {
             </div>
             <div className={style.collectionStat}>
               <div className={style.statValue}>
-                <img
+                <Image
                   src="https://storage.opensea.io/files/6f8e2979d428180222796ff4a33ab929.svg"
                   alt="eth"
                   className={style.ethLogo}
+                  height={40}
+                  width={40}
                 />
                 {collection?.volumeTraded || 0}K
               </div>
@@ -165,10 +203,13 @@ const Collection = () => {
         </div>
       </div>
       <div className="flex flex-wrap">
-        {/* Uncomment and update with actual NFT data */}
-        {/* {nfts?.map((nft, id) => (
-          <NFTCard key={id} nftItem={nft} title={collection?.title} />
-        ))} */}
+        {isLoadingOwnedNfts ? (
+          <p>Loading NFTs...</p>
+        ) : (
+          nfts?.map((nft, id) => (
+            <NFTCard key={id} nftItem={nft} title={collection?.title} />
+          ))
+        )}
       </div>
     </div>
   );

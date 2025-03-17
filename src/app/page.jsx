@@ -6,8 +6,8 @@ import Hero from "../../components/Hero";
 import toast, { Toaster } from "react-hot-toast";
 import { ConnectButton } from "thirdweb/react";
 import { client } from "./client";
-import { createClient } from "@sanity/client";
-import { ethereum } from "thirdweb/chains";
+import { defineChain, ethereum } from "thirdweb/chains";
+import sanityClient from "../../lib/sanityClient";
 
 const style = {
   wrapper: ``,
@@ -16,21 +16,16 @@ const style = {
   details: `text-lg text-center text=[#282b2f] font-semibold mt-4`,
 };
 
-export const sanityClient = createClient({
-  projectId: "62vfb30n",
-  dataset: "production",
-  useCdn: false,
-  apiVersion: "2025-02-25",
-  token: "skgk1Zmr2MQkCdnSmbwu85rv3mYztMPL8nP0XzgNIBbKl0TQDf0OiOLKqmgVCh0QlAi2DI9wsou7hLlGETOyitMipfXxgXIXyt48cgJgvdq2YgGPV1ARqgB9ckURJWUSX6kJeN8znS0kzGSGBkTxyvuMa9O7JWajiEl6VF0BvbA2dxa0ACcn", // Optional: Use a token for write access
-});
-
 export default function Home() {
   const account = useActiveAccount();
   const { data: balance, isLoading } = useWalletBalance({
     client: client, 
-    chain: ethereum,
+    chain: defineChain(11155111),
     address: account?.address,
   });
+
+  console.log(balance);
+  
 
   const welcomeUser = (userName, toastHandler = toast) => {
     toastHandler.success(
@@ -78,7 +73,7 @@ export default function Home() {
             client={client}
             appMetadata={{
               name: "OpenSea App",
-              url: "http://localhost:3004",
+              url: "http://localhost:3000",
             }}
           />
           <div className={style.details}>
